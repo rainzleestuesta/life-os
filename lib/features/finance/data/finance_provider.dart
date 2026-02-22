@@ -127,13 +127,12 @@ class BudgetNotifier extends Notifier<List<Budget>> {
 
   void _seedDefaults(Box<Budget> box) {
     const uuid = Uuid();
-    box.add(Budget(id: uuid.v4(), categoryName: 'Dining', monthlyLimit: 300.0));
-    box.add(
-      Budget(id: uuid.v4(), categoryName: 'Groceries', monthlyLimit: 400.0),
-    );
-    box.add(
-      Budget(id: uuid.v4(), categoryName: 'Entertainment', monthlyLimit: 150.0),
-    );
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final endOfMonth = DateTime(now.year, now.month + 1, 0);
+    box.add(Budget(id: uuid.v4(), categoryName: 'Dining', monthlyLimit: 300.0, startDate: startOfMonth, endDate: endOfMonth));
+    box.add(Budget(id: uuid.v4(), categoryName: 'Groceries', monthlyLimit: 400.0, startDate: startOfMonth, endDate: endOfMonth));
+    box.add(Budget(id: uuid.v4(), categoryName: 'Entertainment', monthlyLimit: 150.0, startDate: startOfMonth, endDate: endOfMonth));
   }
 
   Future<void> addBudget(Budget budget) async {
@@ -162,21 +161,18 @@ final budgetNotifierProvider = NotifierProvider<BudgetNotifier, List<Budget>>(
   BudgetNotifier.new,
 );
 
-// Calculate how much was spent in a specific category for the current month
-final categorySpendingProvider = Provider.family<double, String>((
-  ref,
-  category,
-) {
+// Calculate how much was spent in a specific budget's date range
+final budgetSpendingProvider = Provider.family<double, Budget>((ref, budget) {
   final transactions = ref.watch(financeNotifierProvider);
-  final now = DateTime.now();
+  final end = budget.endDate ?? DateTime.now();
 
   return transactions
       .where(
         (t) =>
             t.isExpense &&
-            t.category == category &&
-            t.date.year == now.year &&
-            t.date.month == now.month,
+            t.category == budget.categoryName &&
+            !t.date.isBefore(budget.startDate) &&
+            !t.date.isAfter(end),
       )
       .fold(0.0, (sum, t) => sum + t.amount);
 });

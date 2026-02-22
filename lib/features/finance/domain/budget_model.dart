@@ -13,17 +13,48 @@ class Budget extends HiveObject {
   @HiveField(2)
   final double monthlyLimit;
 
+  @HiveField(3)
+  final DateTime startDate;
+
+  @HiveField(4)
+  final DateTime? endDate;
+
   Budget({
     required this.id,
     required this.categoryName,
     required this.monthlyLimit,
+    required this.startDate,
+    this.endDate,
   });
 
-  Budget copyWith({String? id, String? categoryName, double? monthlyLimit}) {
+  /// Returns true if this budget applies to the current date.
+  bool get isActive {
+    final now = DateTime.now();
+    final afterStart = !now.isBefore(startDate);
+    final beforeEnd = endDate == null || now.isBefore(endDate!.add(const Duration(days: 1)));
+    return afterStart && beforeEnd;
+  }
+
+  /// Returns true if this budget's period has fully passed.
+  bool get isExpired {
+    if (endDate == null) return false;
+    return DateTime.now().isAfter(endDate!.add(const Duration(days: 1)));
+  }
+
+  Budget copyWith({
+    String? id,
+    String? categoryName,
+    double? monthlyLimit,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool clearEndDate = false,
+  }) {
     return Budget(
       id: id ?? this.id,
       categoryName: categoryName ?? this.categoryName,
       monthlyLimit: monthlyLimit ?? this.monthlyLimit,
+      startDate: startDate ?? this.startDate,
+      endDate: clearEndDate ? null : (endDate ?? this.endDate),
     );
   }
 }

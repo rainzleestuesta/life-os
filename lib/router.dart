@@ -5,6 +5,7 @@ import 'package:life_os/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:life_os/features/finance/presentation/finance_screen.dart';
 import 'package:life_os/features/tasks/presentation/tasks_screen.dart';
 import 'package:life_os/features/calendar/presentation/calendar_screen.dart';
+import 'package:life_os/features/splash/presentation/splash_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -20,12 +21,26 @@ final addTransactionNotifier = ValueNotifier<int>(0);
 
 final goRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/',
+  initialLocation: '/splash',
   routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) {
-        return ScaffoldWithNavBar(child: child);
+      pageBuilder: (context, state, child) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: ScaffoldWithNavBar(child: child),
+          transitionDuration: const Duration(milliseconds: 600),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
+              child: child,
+            );
+          },
+        );
       },
       routes: [
         GoRoute(

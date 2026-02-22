@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:life_os/core/currency_provider.dart';
 import 'package:life_os/features/finance/data/finance_provider.dart';
 import 'package:life_os/features/finance/domain/transaction_model.dart';
 import 'package:life_os/features/finance/domain/budget_model.dart';
@@ -17,6 +18,7 @@ class FinanceScreen extends HookConsumerWidget {
     final totalBalance = ref.watch(totalBalanceProvider);
     final income = ref.watch(totalIncomeProvider);
     final expense = ref.watch(totalExpenseProvider);
+    final currency = ref.watch(currencyProvider);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final showAllTransactions = useState(false);
@@ -45,14 +47,47 @@ class FinanceScreen extends HookConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Finance',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                        letterSpacing: -0.5,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Finance',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        // Currency picker button
+                        InkWell(
+                          onTap: () => _showCurrencyPicker(context, ref),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: cs.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  currency,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(Icons.expand_more_rounded, size: 16, color: cs.primary),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -104,7 +139,7 @@ class FinanceScreen extends HookConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '\$${totalBalance.toStringAsFixed(2)}',
+                        '$currency${totalBalance.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.w700,
@@ -121,6 +156,7 @@ class FinanceScreen extends HookConsumerWidget {
                             amount: income,
                             icon: Icons.arrow_upward_rounded,
                             color: const Color(0xFF81C784),
+                            currency: currency,
                           ),
                           Container(
                             height: 32,
@@ -132,6 +168,7 @@ class FinanceScreen extends HookConsumerWidget {
                             amount: expense,
                             icon: Icons.arrow_downward_rounded,
                             color: const Color(0xFFEF9A9A),
+                            currency: currency,
                           ),
                         ],
                       ),
@@ -309,7 +346,7 @@ class FinanceScreen extends HookConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${transaction.isExpense ? "-" : "+"}\$${transaction.amount.toStringAsFixed(2)}',
+                                  '${transaction.isExpense ? "-" : "+"}$currency${transaction.amount.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -617,12 +654,14 @@ class _BalanceStat extends StatelessWidget {
   final double amount;
   final IconData icon;
   final Color color;
+  final String currency;
 
   const _BalanceStat({
     required this.label,
     required this.amount,
     required this.icon,
     required this.color,
+    required this.currency,
   });
 
   @override
@@ -641,7 +680,7 @@ class _BalanceStat extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          '\$${amount.toStringAsFixed(2)}',
+          '$currency${amount.toStringAsFixed(2)}',
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.w700,
@@ -653,6 +692,87 @@ class _BalanceStat extends StatelessWidget {
   }
 }
 
+// ─── Currency Picker ───────────────────────────────────────────────────
+
+void _showCurrencyPicker(BuildContext context, WidgetRef ref) {
+  final cs = Theme.of(context).colorScheme;
+  final current = ref.read(currencyProvider);
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text('Select Currency',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: cs.onSurface)),
+              const SizedBox(height: 12),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...kSupportedCurrencies.entries.map((entry) {
+                        final isSelected = entry.key == current;
+                        return ListTile(
+                          onTap: () {
+                            ref.read(currencyProvider.notifier).setCurrency(entry.key);
+                            Navigator.pop(ctx);
+                          },
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          tileColor: isSelected ? cs.primary.withValues(alpha: 0.08) : null,
+                          leading: Container(
+                            width: 44, height: 44,
+                            decoration: BoxDecoration(
+                              color: isSelected ? cs.primary.withValues(alpha: 0.12) : cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(entry.key,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected ? cs.primary : cs.onSurface,
+                                )),
+                            ),
+                          ),
+                          title: Text(entry.value,
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
+                          trailing: isSelected
+                              ? Icon(Icons.check_circle_rounded, color: cs.primary)
+                              : null,
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 // ─── Budget Section ────────────────────────────────────────────────────
 
 class _BudgetSection extends ConsumerWidget {
@@ -661,6 +781,7 @@ class _BudgetSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final budgets = ref.watch(budgetNotifierProvider);
+    final currency = ref.watch(currencyProvider);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -690,9 +811,7 @@ class _BudgetSection extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           ...budgets.map((budget) {
-            final spent = ref.watch(
-              categorySpendingProvider(budget.categoryName),
-            );
+            final spent = ref.watch(budgetSpendingProvider(budget));
             final percentage = (spent / budget.monthlyLimit).clamp(0.0, 1.0);
 
             Color progressColor = Colors.green;
@@ -701,6 +820,11 @@ class _BudgetSection extends ConsumerWidget {
             } else if (percentage > 0.7) {
               progressColor = Colors.orange;
             }
+
+            final fmt = DateFormat('MMM d');
+            final dateRangeStr = budget.endDate != null
+                ? '${fmt.format(budget.startDate)} – ${fmt.format(budget.endDate!)}'
+                : 'From ${fmt.format(budget.startDate)}';
 
             return GestureDetector(
               onTap: () => _showBudgetDetailsSheet(
@@ -730,21 +854,63 @@ class _BudgetSection extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          budget.categoryName,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              budget.categoryName,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              dateRangeStr,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '\$${spent.toStringAsFixed(0)} / \$${budget.monthlyLimit.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: progressColor,
-                          ),
+                        Row(
+                          children: [
+                            if (budget.isExpired)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: cs.errorContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Expired',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.error),
+                                ),
+                              )
+                            else if (budget.isActive)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Active',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.green),
+                                ),
+                              ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$currency${spent.toStringAsFixed(0)} / $currency${budget.monthlyLimit.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: progressColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -817,11 +983,19 @@ class _BudgetSection extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
+    final now = DateTime.now();
+    DateTimeRange selectedRange = DateTimeRange(
+      start: budget?.startDate ?? DateTime(now.year, now.month, 1),
+      end: budget?.endDate ?? DateTime(now.year, now.month + 1, 0),
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -945,6 +1119,56 @@ class _BudgetSection extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+
+                    // Date Range Picker
+                    Text(
+                      'Budget Period',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDateRangePicker(
+                          context: context,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                          initialDateRange: selectedRange,
+                          builder: (context, child) => Theme(
+                            data: Theme.of(context),
+                            child: child!,
+                          ),
+                        );
+                        if (picked != null) {
+                          setModalState(() => selectedRange = picked);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: cs.outline.withValues(alpha: 0.5)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.date_range_outlined, color: cs.primary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '${DateFormat('MMM d, yyyy').format(selectedRange.start)}  →  ${DateFormat('MMM d, yyyy').format(selectedRange.end)}',
+                                style: TextStyle(color: cs.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 32),
 
                     // Save Action
@@ -964,6 +1188,8 @@ class _BudgetSection extends ConsumerWidget {
                                 id: budget.id,
                                 categoryName: catName,
                                 monthlyLimit: limitAmt,
+                                startDate: selectedRange.start,
+                                endDate: selectedRange.end,
                               );
                               ref
                                   .read(budgetNotifierProvider.notifier)
@@ -973,6 +1199,8 @@ class _BudgetSection extends ConsumerWidget {
                                 id: const Uuid().v4(),
                                 categoryName: catName,
                                 monthlyLimit: limitAmt,
+                                startDate: selectedRange.start,
+                                endDate: selectedRange.end,
                               );
                               ref
                                   .read(budgetNotifierProvider.notifier)
@@ -1003,6 +1231,7 @@ class _BudgetSection extends ConsumerWidget {
             ),
           ),
         );
+        }); // StatefulBuilder
       },
     );
   }
@@ -1017,18 +1246,20 @@ class _BudgetSection extends ConsumerWidget {
   ) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final currency = ref.read(currencyProvider);
 
     // Fetch all transactions so we can filter them gracefully inside the sheet
     // instead of creating a whole new provider
     final allTransactions = ref.read(financeNotifierProvider);
     final now = DateTime.now();
 
-    // Filter transactions to matching category explicitly inside current month
+    // Filter transactions to matching category within the budget's date range
+    final end = budget.endDate ?? DateTime.now();
     final relatedTransactions = allTransactions.where((t) {
       return t.isExpense &&
           t.category == budget.categoryName &&
-          t.date.year == now.year &&
-          t.date.month == now.month;
+          !t.date.isBefore(budget.startDate) &&
+          !t.date.isAfter(end);
     }).toList()..sort((a, b) => b.date.compareTo(a.date)); // Newest first
 
     showModalBottomSheet(
@@ -1097,14 +1328,14 @@ class _BudgetSection extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Spent this month',
+                          'Spent in period',
                           style: TextStyle(
                             fontSize: 14,
                             color: cs.onSurfaceVariant,
                           ),
                         ),
                         Text(
-                          '\$${spent.toStringAsFixed(0)} / \$${budget.monthlyLimit.toStringAsFixed(0)}',
+                          '$currency${spent.toStringAsFixed(0)} / $currency${budget.monthlyLimit.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -1207,7 +1438,7 @@ class _BudgetSection extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '-\$${tx.amount.toStringAsFixed(2)}',
+                                  '-$currency${tx.amount.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
