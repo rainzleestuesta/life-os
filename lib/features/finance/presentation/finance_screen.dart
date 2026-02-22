@@ -333,14 +333,36 @@ class FinanceScreen extends HookConsumerWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        DateFormat.yMMMd().format(
-                                          transaction.date,
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: cs.onSurfaceVariant,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            DateFormat.yMMMd().format(
+                                              transaction.date,
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: cs.onSurfaceVariant,
+                                            ),
+                                          ),
+                                          if (transaction.budgetCategory != null) ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: cs.primary.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                transaction.budgetCategory!,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: cs.primary,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -592,10 +614,6 @@ class FinanceScreen extends HookConsumerWidget {
                   onChanged: (val) {
                     setState(() {
                       selectedBudgetCategory = val;
-                      // Auto-fill category if budget selected
-                      if (val != null) {
-                        categoryController.text = val;
-                      }
                     });
                   },
                 ),
@@ -615,6 +633,7 @@ class FinanceScreen extends HookConsumerWidget {
                       id: const Uuid().v4(),
                       amount: amount,
                       category: category,
+                      budgetCategory: selectedBudgetCategory,
                       isExpense: isExpense,
                       date: DateTime.now(),
                     );
@@ -784,8 +803,6 @@ class _BudgetSection extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-
-    if (budgets.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),

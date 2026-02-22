@@ -11,71 +11,9 @@ class FinanceNotifier extends Notifier<List<Transaction>> {
   @override
   List<Transaction> build() {
     final box = Hive.box<Transaction>(AppConstants.financeBox);
-    if (box.isEmpty || box.length < 10) {
-      box.clear();
-      _seedDefaults(box);
-    }
     return box.values.toList();
   }
 
-  void _seedDefaults(Box<Transaction> box) {
-    const uuid = Uuid();
-    final random = math.Random();
-    final today = DateTime.now();
-
-    final categories = [
-      'Groceries',
-      'Transport',
-      'Entertainment',
-      'Dining',
-      'Shopping',
-    ];
-
-    // Generate roughly 6 months of data
-    for (int i = 180; i >= 0; i--) {
-      final date = today.subtract(Duration(days: i));
-
-      // 1. Add salary on the 1st of every month
-      if (date.day == 1) {
-        box.add(
-          Transaction(
-            id: uuid.v4(),
-            amount: 4500.0,
-            category: 'Salary',
-            isExpense: false,
-            date: date,
-          ),
-        );
-      }
-
-      // 2. Add random expenses (mostly every day or every other day)
-      // 70% chance to have an expense on a given day
-      if (random.nextDouble() > 0.3) {
-        // 1 to 3 transactions per day
-        final txCount = random.nextInt(3) + 1;
-        for (int j = 0; j < txCount; j++) {
-          final isLargeExpense =
-              random.nextDouble() > 0.9; // 10% chance for big expense
-          final amount = isLargeExpense
-              ? 100.0 +
-                    random.nextInt(400) // $100 - $500
-              : 5.0 + random.nextInt(45); // $5 - $50
-
-          final category = categories[random.nextInt(categories.length)];
-
-          box.add(
-            Transaction(
-              id: uuid.v4(),
-              amount: amount.toDouble(),
-              category: category,
-              isExpense: true,
-              date: date,
-            ),
-          );
-        }
-      }
-    }
-  }
 
   Future<void> addTransaction(Transaction transaction) async {
     final box = Hive.box<Transaction>(AppConstants.financeBox);
@@ -119,21 +57,9 @@ class BudgetNotifier extends Notifier<List<Budget>> {
   @override
   List<Budget> build() {
     final box = Hive.box<Budget>(AppConstants.budgetBox);
-    if (box.isEmpty) {
-      _seedDefaults(box);
-    }
     return box.values.toList();
   }
 
-  void _seedDefaults(Box<Budget> box) {
-    const uuid = Uuid();
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
-    box.add(Budget(id: uuid.v4(), categoryName: 'Dining', monthlyLimit: 300.0, startDate: startOfMonth, endDate: endOfMonth));
-    box.add(Budget(id: uuid.v4(), categoryName: 'Groceries', monthlyLimit: 400.0, startDate: startOfMonth, endDate: endOfMonth));
-    box.add(Budget(id: uuid.v4(), categoryName: 'Entertainment', monthlyLimit: 150.0, startDate: startOfMonth, endDate: endOfMonth));
-  }
 
   Future<void> addBudget(Budget budget) async {
     final box = Hive.box<Budget>(AppConstants.budgetBox);
@@ -170,7 +96,7 @@ final budgetSpendingProvider = Provider.family<double, Budget>((ref, budget) {
       .where(
         (t) =>
             t.isExpense &&
-            t.category == budget.categoryName &&
+            (t.budgetCategory ?? t.category) == budget.categoryName &&
             !t.date.isBefore(budget.startDate) &&
             !t.date.isAfter(end),
       )

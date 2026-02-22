@@ -356,6 +356,30 @@ class _TransactionItem extends StatelessWidget {
             color: cs.onSurface,
           ),
         ),
+        subtitle: tx.budgetCategory != null
+            ? Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        tx.budgetCategory!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: cs.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : null,
         trailing: Text(
           '${tx.isExpense ? '-' : '+'}\$${tx.amount.toStringAsFixed(2)}',
           style: TextStyle(

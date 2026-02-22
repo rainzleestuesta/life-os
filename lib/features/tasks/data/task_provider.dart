@@ -10,75 +10,9 @@ class TaskNotifier extends Notifier<List<Task>> {
   @override
   List<Task> build() {
     final box = Hive.box<Task>(AppConstants.tasksBox);
-    if (box.isEmpty || box.values.every((t) => t.completedDates.isEmpty)) {
-      box.clear();
-      _seedDefaults(box);
-    }
     return box.values.toList();
   }
 
-  void _seedDefaults(Box<Task> box) {
-    const uuid = Uuid();
-    final defaults = [
-      Task(
-        id: uuid.v4(),
-        title: 'Drink a glass of water',
-        description: 'Stay hydrated first thing in the morning',
-        category: TaskCategory.morning,
-        scheduledTime: '07:00',
-        repeatDays: [1, 2, 3, 4, 5, 6, 7],
-        priority: TaskPriority.medium,
-      ),
-      Task(
-        id: uuid.v4(),
-        title: 'Meditate to relax',
-        description: 'Clear your mind for a focused day',
-        category: TaskCategory.morning,
-        scheduledTime: '07:15',
-        repeatDays: [1, 2, 3, 4, 5, 6, 7],
-        priority: TaskPriority.high,
-      ),
-      Task(
-        id: uuid.v4(),
-        title: 'Stretch for 10 minutes',
-        description: 'Loosen up your body before the day',
-        category: TaskCategory.morning,
-        scheduledTime: '07:30',
-        repeatDays: [1, 2, 3, 4, 5],
-        priority: TaskPriority.medium,
-      ),
-      Task(
-        id: uuid.v4(),
-        title: 'Go for a short walk',
-        description: 'Get some fresh air and sunlight',
-        category: TaskCategory.afternoon,
-        scheduledTime: '12:30',
-        repeatDays: [1, 2, 3, 4, 5],
-        priority: TaskPriority.low,
-      ),
-    ];
-    final today = DateTime.now();
-    final random = math.Random();
-
-    for (final task in defaults) {
-      final List<String> simulatedCompletions = [];
-      // Simulate last 30 days
-      for (int i = 30; i >= 0; i--) {
-        final date = today.subtract(Duration(days: i));
-        // Ensure it's scheduled for that day, and 85% chance they completed it
-        if (task.isScheduledFor(date) && random.nextDouble() > 0.15) {
-          final dateKey =
-              "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-          simulatedCompletions.add(dateKey);
-        }
-      }
-
-      final taskWithHistory = task.copyWith(
-        completedDates: simulatedCompletions,
-      );
-      box.add(taskWithHistory);
-    }
-  }
 
   Future<void> addTask(Task task) async {
     final box = Hive.box<Task>(AppConstants.tasksBox);

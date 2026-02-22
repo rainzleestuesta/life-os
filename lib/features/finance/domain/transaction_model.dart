@@ -19,11 +19,15 @@ class Transaction extends HiveObject {
   @HiveField(4)
   final DateTime date;
 
+  @HiveField(5)
+  final String? budgetCategory;
+
   Transaction({
     required this.id,
     required this.amount,
     required this.category,
     required this.isExpense,
     required this.date,
+    this.budgetCategory,
   });
 }
