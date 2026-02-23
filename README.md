@@ -7,10 +7,12 @@ A comprehensive, offline-first personal management application built with Flutte
 *   **📊 Insightful Dashboard:** Keep track of your daily routine completion progress, your top habit streaks, and a quick summary of your financial balance.
 *   **✅ Routine & Task Manager:** 
     *   Create routines with custom times, repeat days, sub-tasks, and priorities.
+    *   **Optional Habit Timer:** Set a specific duration for routines and launch a countdown timer directly from the task card.
+    *   **Tags & Projects:** Categorize tasks with custom tags (e.g., `#Work`, `#Health`) for better organization.
     *   Track your progress and streaks.
     *   Filter your daily tasks effortlessly with a sleek date carousel.
 *   **💰 Finance Tracker:**
-    *   Log your income and expenses with customizable categories.
+    *   Log your income and expenses with customizable categories and **tags**.
     *   Set monthly budget limits for different categories.
     *   Visualize your spending limits and track your overall balance.
 *   **📅 Calendar View:** A dedicated calendar screen providing a bird's eye view of your scheduled tasks, habits, and past financial transactions mapped directly to their dates.
