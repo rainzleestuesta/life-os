@@ -8,6 +8,7 @@ import 'package:life_os/features/tasks/data/task_provider.dart';
 import 'package:life_os/features/tasks/domain/task_model.dart';
 import 'package:life_os/features/tasks/domain/subtask_model.dart';
 import 'package:life_os/router.dart';
+import 'package:life_os/features/tasks/presentation/widgets/timer_dialog.dart';
 import 'package:uuid/uuid.dart';
 
 // ─── Category helpers (theme-independent) ────────────────────────────────
@@ -377,6 +378,12 @@ class TasksScreen extends HookConsumerWidget {
       text: existingTask?.description ?? '',
     );
     final subTaskController = TextEditingController();
+    final timerController = TextEditingController(
+      text: existingTask?.timerDuration?.toString() ?? '',
+    );
+    final tagsController = TextEditingController(
+      text: existingTask?.tags.join(', ') ?? '',
+    );
     List<SubTask> currentSubTasks = List.from(existingTask?.subTasks ?? []);
 
     TaskPriority priority = existingTask?.priority ?? TaskPriority.medium;
@@ -804,6 +811,76 @@ class TasksScreen extends HookConsumerWidget {
                     }),
                   ],
                 ),
+                const SizedBox(height: 24),
+
+                // Timer Duration
+                Text(
+                  'Timer duration (optional)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: timerController,
+                        style: TextStyle(color: cs.onSurface, fontSize: 16),
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'e.g., 15 (minutes)',
+                          hintStyle: TextStyle(
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                          filled: false,
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: cs.outline),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: cs.primary, width: 2),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                          suffixText: 'min',
+                          suffixStyle: TextStyle(color: cs.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Tags
+                Text(
+                  'Tags (comma separated)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: tagsController,
+                  style: TextStyle(color: cs.onSurface, fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: 'Work, Health, SideHustle',
+                    hintStyle: TextStyle(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                    filled: false,
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.primary, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
                 const SizedBox(height: 28),
 
                 // Save button
@@ -816,6 +893,17 @@ class TasksScreen extends HookConsumerWidget {
                             '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}';
                       }
                       final sortedRepeatDays = repeatDays.toList()..sort();
+                      
+                      int? parsedTimer;
+                      if (timerController.text.isNotEmpty) {
+                        parsedTimer = int.tryParse(timerController.text);
+                      }
+                      
+                      final parsedTags = tagsController.text
+                          .split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList();
 
                       if (isEditing) {
                         final updated = existingTask.copyWith(
@@ -850,6 +938,8 @@ class TasksScreen extends HookConsumerWidget {
                               ? selectedDate
                               : null,
                           subTasks: currentSubTasks,
+                          timerDuration: parsedTimer,
+                          tags: parsedTags,
                         );
                         ref.read(taskNotifierProvider.notifier).addTask(task);
                       }
@@ -1209,6 +1299,32 @@ class _RoutineCardState extends State<_RoutineCard>
                           ],
                         ),
                       ),
+                      
+                      // Tags
+                      if (task.tags.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: task.tags.map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: cs.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '#$tag',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
 
                       // Time badge
                       if (task.scheduledTime != null)
@@ -1240,6 +1356,55 @@ class _RoutineCardState extends State<_RoutineCard>
                             ],
                           ),
                         ),
+
+                      // Timer badge
+                      if (task.timerDuration != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            if (_isRevealed) {
+                              _closeReveal();
+                              return;
+                            }
+                            showDialog(
+                              context: context,
+                              builder: (context) => TimerDialog(
+                                task: task,
+                                onComplete: () {
+                                  // Mark as done for today if timer finished
+                                  if (!isCompleted) {
+                                    widget.ref
+                                        .read(taskNotifierProvider.notifier)
+                                        .toggleTaskForDate(task, widget.selectedDate);
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: cs.primaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.timer_outlined, size: 14, color: cs.onPrimaryContainer),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${task.timerDuration}m',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onPrimaryContainer,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

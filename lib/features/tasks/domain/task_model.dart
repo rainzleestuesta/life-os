@@ -62,6 +62,12 @@ class Task extends HiveObject {
   @HiveField(10, defaultValue: [])
   final List<SubTask> subTasks;
 
+  @HiveField(11)
+  final int? timerDuration; // Optional timer duration in minutes
+
+  @HiveField(12)
+  final List<String> tags;
+
   Task({
     required this.id,
     required this.title,
@@ -74,6 +80,8 @@ class Task extends HiveObject {
     this.category = TaskCategory.anytime,
     this.completedDates = const [],
     this.subTasks = const [],
+    this.timerDuration,
+    this.tags = const [],
   });
 
   double get completionPercentage {
@@ -96,6 +104,8 @@ class Task extends HiveObject {
     TaskCategory? category,
     List<String>? completedDates,
     List<SubTask>? subTasks,
+    int? timerDuration,
+    List<String>? tags,
   }) {
     return Task(
       id: id ?? this.id,
@@ -109,6 +119,8 @@ class Task extends HiveObject {
       category: category ?? this.category,
       completedDates: completedDates ?? this.completedDates,
       subTasks: subTasks ?? this.subTasks,
+      timerDuration: timerDuration ?? this.timerDuration,
+      tags: tags ?? this.tags,
     );
   }
 

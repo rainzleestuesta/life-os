@@ -28,13 +28,15 @@ class TaskAdapter extends TypeAdapter<Task> {
       category: fields[8] as TaskCategory,
       completedDates: (fields[9] as List).cast<String>(),
       subTasks: fields[10] == null ? [] : (fields[10] as List).cast<SubTask>(),
+      timerDuration: fields[11] as int?,
+      tags: (fields[12] as List).cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +58,11 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(9)
       ..write(obj.completedDates)
       ..writeByte(10)
-      ..write(obj.subTasks);
+      ..write(obj.subTasks)
+      ..writeByte(11)
+      ..write(obj.timerDuration)
+      ..writeByte(12)
+      ..write(obj.tags);
   }
 
   @override

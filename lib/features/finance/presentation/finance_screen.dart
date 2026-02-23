@@ -364,6 +364,31 @@ class FinanceScreen extends HookConsumerWidget {
                                           ],
                                         ],
                                       ),
+                                      // Tags
+                                      if (transaction.tags.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Wrap(
+                                          spacing: 4,
+                                          runSpacing: 4,
+                                          children: transaction.tags.map((tag) {
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: cs.surfaceContainerHighest,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                '#$tag',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -416,6 +441,7 @@ class FinanceScreen extends HookConsumerWidget {
 
     final amountController = TextEditingController();
     final categoryController = TextEditingController();
+    final tagsController = TextEditingController();
     bool isExpense = true;
     String? selectedBudgetCategory;
 
@@ -619,7 +645,27 @@ class FinanceScreen extends HookConsumerWidget {
                 ),
                 const SizedBox(height: 12),
               ],
-              const SizedBox(height: 12),
+              
+              // Tags
+              TextField(
+                controller: tagsController,
+                style: TextStyle(color: cs.onSurface, fontSize: 16),
+                decoration: InputDecoration(
+                  labelText: 'Tags (comma separated)',
+                  labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                  hintText: 'Groceries, Food, Travel',
+                  hintStyle: TextStyle(
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: cs.outline),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: cs.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Save button
               FilledButton(
@@ -636,6 +682,11 @@ class FinanceScreen extends HookConsumerWidget {
                       budgetCategory: selectedBudgetCategory,
                       isExpense: isExpense,
                       date: DateTime.now(),
+                      tags: tagsController.text
+                          .split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList(),
                     );
                     ref
                         .read(financeNotifierProvider.notifier)

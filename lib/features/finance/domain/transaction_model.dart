@@ -22,6 +22,9 @@ class Transaction extends HiveObject {
   @HiveField(5)
   final String? budgetCategory;
 
+  @HiveField(6)
+  final List<String> tags;
+
   Transaction({
     required this.id,
     required this.amount,
@@ -29,5 +32,6 @@ class Transaction extends HiveObject {
     required this.isExpense,
     required this.date,
     this.budgetCategory,
+    this.tags = const [],
   });
 }
