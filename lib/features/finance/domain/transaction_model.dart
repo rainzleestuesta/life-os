@@ -25,6 +25,12 @@ class Transaction extends HiveObject {
   @HiveField(6)
   final List<String> tags;
 
+  @HiveField(7)
+  final String? walletId;
+
+  @HiveField(8)
+  final String? title;
+
   Transaction({
     required this.id,
     required this.amount,
@@ -33,5 +39,31 @@ class Transaction extends HiveObject {
     required this.date,
     this.budgetCategory,
     this.tags = const [],
+    this.walletId,
+    this.title,
   });
+
+  Transaction copyWith({
+    String? id,
+    double? amount,
+    String? category,
+    bool? isExpense,
+    DateTime? date,
+    String? budgetCategory,
+    List<String>? tags,
+    String? walletId,
+    String? title,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      amount: amount ?? this.amount,
+      category: category ?? this.category,
+      isExpense: isExpense ?? this.isExpense,
+      date: date ?? this.date,
+      budgetCategory: budgetCategory ?? this.budgetCategory,
+      tags: tags ?? this.tags,
+      walletId: walletId ?? this.walletId,
+      title: title ?? this.title,
+    );
+  }
 }

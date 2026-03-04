@@ -1,6 +1,6 @@
 {
-    "name": "life_os",
-    "short_name": "life_os",
+    "name": "LifeFlow",
+    "short_name": "LifeFlow",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 24),
             // Optional: App Name (can be removed if the logo has text)
             Text(
-              'Life OS',
+              'LifeFlow',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,

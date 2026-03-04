@@ -3,11 +3,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:life_os/core/theme_provider.dart';
-import 'package:life_os/features/tasks/data/task_provider.dart';
-import 'package:life_os/features/tasks/domain/task_model.dart';
-import 'package:life_os/features/finance/data/finance_provider.dart';
-import 'package:life_os/features/finance/domain/transaction_model.dart';
+import 'package:life_flow/core/theme_provider.dart';
+import 'package:life_flow/features/tasks/data/task_provider.dart';
+import 'package:life_flow/features/tasks/domain/task_model.dart';
+import 'package:life_flow/features/finance/data/finance_provider.dart';
+import 'package:life_flow/features/finance/domain/transaction_model.dart';
 
 class CalendarScreen extends StatefulHookConsumerWidget {
   const CalendarScreen({super.key});

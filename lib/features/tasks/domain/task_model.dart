@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:life_os/features/tasks/domain/subtask_model.dart';
+import 'package:life_flow/features/tasks/domain/subtask_model.dart';
 
 part 'task_model.g.dart';
 
@@ -68,6 +68,9 @@ class Task extends HiveObject {
   @HiveField(12)
   final List<String> tags;
 
+  @HiveField(13)
+  final DateTime? createdDate;
+
   Task({
     required this.id,
     required this.title,
@@ -82,6 +85,7 @@ class Task extends HiveObject {
     this.subTasks = const [],
     this.timerDuration,
     this.tags = const [],
+    this.createdDate,
   });
 
   double get completionPercentage {
@@ -106,6 +110,7 @@ class Task extends HiveObject {
     List<SubTask>? subTasks,
     int? timerDuration,
     List<String>? tags,
+    DateTime? createdDate,
   }) {
     return Task(
       id: id ?? this.id,
@@ -121,6 +126,7 @@ class Task extends HiveObject {
       subTasks: subTasks ?? this.subTasks,
       timerDuration: timerDuration ?? this.timerDuration,
       tags: tags ?? this.tags,
+      createdDate: createdDate ?? this.createdDate,
     );
   }
 
@@ -158,7 +164,14 @@ class Task extends HiveObject {
   bool isScheduledFor(DateTime date) {
     // If it has repeat days, check if the date's weekday matches
     if (repeatDays.isNotEmpty) {
-      return repeatDays.contains(date.weekday);
+      if (!repeatDays.contains(date.weekday)) return false;
+      // Only show on dates on or after creation date (skip past days)
+      if (createdDate != null) {
+        final created = DateTime(createdDate!.year, createdDate!.month, createdDate!.day);
+        final check = DateTime(date.year, date.month, date.day);
+        if (check.isBefore(created)) return false;
+      }
+      return true;
     }
     // Otherwise, check exact dueDate match
     if (dueDate != null) {

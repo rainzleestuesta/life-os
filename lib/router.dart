@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:life_os/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:life_os/features/finance/presentation/finance_screen.dart';
-import 'package:life_os/features/tasks/presentation/tasks_screen.dart';
-import 'package:life_os/features/calendar/presentation/calendar_screen.dart';
-import 'package:life_os/features/splash/presentation/splash_screen.dart';
+import 'package:life_flow/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:life_flow/features/finance/presentation/finance_screen.dart';
+import 'package:life_flow/features/finance/presentation/all_transactions_screen.dart';
+import 'package:life_flow/features/tasks/presentation/tasks_screen.dart';
+import 'package:life_flow/features/calendar/presentation/calendar_screen.dart';
+import 'package:life_flow/features/splash/presentation/splash_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -26,6 +27,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: '/splash',
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/finance/transactions',
+      builder: (context, state) => const AllTransactionsScreen(),
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,

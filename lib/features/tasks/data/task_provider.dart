@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:life_os/core/constants.dart';
-import 'package:life_os/core/notification_service.dart';
-import 'package:life_os/features/tasks/domain/task_model.dart';
+import 'package:life_flow/core/constants.dart';
+import 'package:life_flow/core/notification_service.dart';
+import 'package:life_flow/features/tasks/domain/task_model.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math' as math;
 

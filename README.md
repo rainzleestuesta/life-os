@@ -1,6 +1,6 @@
-# Life OS
+# LifeFlow
 
-A comprehensive, offline-first personal management application built with Flutter. "Life OS" helps you track your daily routines, manage your finances, visualize your progress, and stay on top of your schedule—all in a beautifully designed, modern interface.
+A comprehensive, offline-first personal management application built with Flutter. "LifeFlow" helps you track your daily routines, manage your finances, visualize your progress, and stay on top of your schedule—all in a beautifully designed, modern interface.
 
 ## 🌟 Features
 

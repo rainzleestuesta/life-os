@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/foundation.dart';
-import 'package:life_os/features/tasks/domain/task_model.dart';
+import 'package:life_flow/features/tasks/domain/task_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NotificationService {

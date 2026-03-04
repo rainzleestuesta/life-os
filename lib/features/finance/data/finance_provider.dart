@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:life_os/core/constants.dart';
-import 'package:life_os/features/finance/domain/transaction_model.dart';
-import 'package:life_os/features/finance/domain/budget_model.dart';
+import 'package:life_flow/core/constants.dart';
+import 'package:life_flow/features/finance/domain/transaction_model.dart';
+import 'package:life_flow/features/finance/domain/budget_model.dart';
+import 'package:life_flow/features/finance/domain/wallet_model.dart';
 
 import 'dart:math' as math;
 import 'package:uuid/uuid.dart';
@@ -19,6 +20,17 @@ class FinanceNotifier extends Notifier<List<Transaction>> {
     final box = Hive.box<Transaction>(AppConstants.financeBox);
     await box.add(transaction);
     state = box.values.toList();
+  }
+
+  Future<void> updateTransaction(Transaction oldTx, Transaction newTx) async {
+    final box = Hive.box<Transaction>(AppConstants.financeBox);
+    // Find index to maintain order and overwrite correctly
+    final index = box.values.toList().indexWhere((t) => t.id == oldTx.id);
+    if (index != -1) {
+      final key = box.keyAt(index);
+      await box.put(key, newTx);
+      state = box.values.toList();
+    }
   }
 
   Future<void> deleteTransaction(Transaction transaction) async {
@@ -101,4 +113,63 @@ final budgetSpendingProvider = Provider.family<double, Budget>((ref, budget) {
             !t.date.isAfter(end),
       )
       .fold(0.0, (sum, t) => sum + t.amount);
+});
+
+// ─── Wallet Providers ──────────────────────────────────────────────────
+
+class WalletNotifier extends Notifier<List<Wallet>> {
+  @override
+  List<Wallet> build() {
+    final box = Hive.box<Wallet>(AppConstants.walletBox);
+    if (box.isEmpty) {
+      final defaultWallet = Wallet(
+        id: const Uuid().v4(),
+        name: 'Cash',
+        iconKey: 'cash',
+        initialBalance: 0.0,
+      );
+      box.add(defaultWallet);
+    }
+    return box.values.toList();
+  }
+
+  Future<void> addWallet(Wallet wallet) async {
+    final box = Hive.box<Wallet>(AppConstants.walletBox);
+    await box.add(wallet);
+    state = box.values.toList();
+  }
+
+  Future<void> updateWallet(Wallet oldWallet, Wallet updatedWallet) async {
+    final box = Hive.box<Wallet>(AppConstants.walletBox);
+    final index = box.values.toList().indexWhere((w) => w.id == oldWallet.id);
+    if (index != -1) {
+      final key = box.keyAt(index);
+      await box.put(key, updatedWallet);
+      state = box.values.toList();
+    }
+  }
+
+  Future<void> deleteWallet(Wallet wallet) async {
+    await wallet.delete();
+    state = state.where((w) => w.key != wallet.key).toList();
+  }
+}
+
+final walletNotifierProvider = NotifierProvider<WalletNotifier, List<Wallet>>(
+  WalletNotifier.new,
+);
+
+final walletBalanceProvider = Provider.family<double, String>((ref, walletId) {
+  final transactions = ref.watch(financeNotifierProvider);
+  final wallets = ref.watch(walletNotifierProvider);
+  
+  double initialBalance = 0.0;
+  try {
+    final wallet = wallets.firstWhere((w) => w.id == walletId);
+    initialBalance = wallet.initialBalance;
+  } catch (_) {}
+
+  return transactions
+      .where((t) => t.walletId == walletId)
+      .fold(initialBalance, (sum, t) => t.isExpense ? sum - t.amount : sum + t.amount);
 });

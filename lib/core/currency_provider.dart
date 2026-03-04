@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:life_os/core/constants.dart';
+import 'package:life_flow/core/constants.dart';
 
 /// Supported currencies: symbol → display name
 const Map<String, String> kSupportedCurrencies = {

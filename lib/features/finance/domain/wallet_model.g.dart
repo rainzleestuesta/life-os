@@ -1,44 +1,41 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'budget_model.dart';
+part of 'wallet_model.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class BudgetAdapter extends TypeAdapter<Budget> {
+class WalletAdapter extends TypeAdapter<Wallet> {
   @override
-  final int typeId = 4;
+  final int typeId = 6;
 
   @override
-  Budget read(BinaryReader reader) {
+  Wallet read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Budget(
+    return Wallet(
       id: fields[0] as String,
-      categoryName: fields[1] as String,
-      monthlyLimit: fields[2] as double?,
-      startDate: fields[3] as DateTime,
-      endDate: fields[4] as DateTime?,
+      name: fields[1] as String,
+      iconKey: fields[2] as String,
+      initialBalance: fields[3] == null ? 0.0 : fields[3] as double,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Budget obj) {
+  void write(BinaryWriter writer, Wallet obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.categoryName)
+      ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.monthlyLimit)
+      ..write(obj.iconKey)
       ..writeByte(3)
-      ..write(obj.startDate)
-      ..writeByte(4)
-      ..write(obj.endDate);
+      ..write(obj.initialBalance);
   }
 
   @override
@@ -47,7 +44,7 @@ class BudgetAdapter extends TypeAdapter<Budget> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BudgetAdapter &&
+      other is WalletAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:life_os/features/tasks/domain/task_model.dart';
+import 'package:life_flow/features/tasks/domain/task_model.dart';
 
 class TimerDialog extends StatefulWidget {
   final Task task;

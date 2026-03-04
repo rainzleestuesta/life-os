@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:life_os/features/tasks/data/task_provider.dart';
-import 'package:life_os/features/tasks/domain/task_model.dart';
-import 'package:life_os/features/tasks/domain/subtask_model.dart';
-import 'package:life_os/router.dart';
-import 'package:life_os/features/tasks/presentation/widgets/timer_dialog.dart';
+import 'package:life_flow/features/tasks/data/task_provider.dart';
+import 'package:life_flow/features/tasks/domain/task_model.dart';
+import 'package:life_flow/features/tasks/domain/subtask_model.dart';
+import 'package:life_flow/router.dart';
 import 'package:uuid/uuid.dart';
 
 // ─── Category helpers (theme-independent) ────────────────────────────────
@@ -377,17 +376,8 @@ class TasksScreen extends HookConsumerWidget {
     final descController = TextEditingController(
       text: existingTask?.description ?? '',
     );
-    final subTaskController = TextEditingController();
-    final timerController = TextEditingController(
-      text: existingTask?.timerDuration?.toString() ?? '',
-    );
-    final tagsController = TextEditingController(
-      text: existingTask?.tags.join(', ') ?? '',
-    );
-    List<SubTask> currentSubTasks = List.from(existingTask?.subTasks ?? []);
 
     TaskPriority priority = existingTask?.priority ?? TaskPriority.medium;
-    TaskCategory category = existingTask?.category ?? TaskCategory.anytime;
     TimeOfDay? selectedTime;
     if (existingTask?.scheduledTime != null) {
       final parts = existingTask!.scheduledTime!.split(':');
@@ -401,6 +391,14 @@ class TasksScreen extends HookConsumerWidget {
     final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    
+    // Helper to calculate category dynamically
+    TaskCategory calculateCategory(TimeOfDay? time) {
+      if (time == null) return TaskCategory.anytime;
+      if (time.hour >= 5 && time.hour < 12) return TaskCategory.morning;
+      if (time.hour >= 12 && time.hour < 17) return TaskCategory.afternoon;
+      return TaskCategory.evening;
+    }
 
     showModalBottomSheet(
       context: context,
@@ -530,111 +528,6 @@ class TasksScreen extends HookConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Sub-Tasks
-                Text(
-                  'Sub-Tasks',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (currentSubTasks.isNotEmpty) ...[
-                  ...currentSubTasks.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final st = entry.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                currentSubTasks[idx] = st.copyWith(
-                                  isCompleted: !st.isCompleted,
-                                );
-                              });
-                            },
-                            child: Icon(
-                              st.isCompleted
-                                  ? Icons.check_circle
-                                  : Icons.circle_outlined,
-                              color: st.isCompleted ? cs.primary : cs.outline,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              st.title,
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: st.isCompleted
-                                    ? cs.onSurfaceVariant
-                                    : cs.onSurface,
-                                decoration: st.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 20),
-                            color: cs.onSurfaceVariant,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () {
-                              setState(() {
-                                currentSubTasks.removeAt(idx);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 8),
-                ],
-                // Add subtask
-                Row(
-                  children: [
-                    Icon(Icons.add, color: cs.onSurfaceVariant, size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: subTaskController,
-                        style: TextStyle(color: cs.onSurface, fontSize: 15),
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (val) {
-                          if (val.trim().isNotEmpty) {
-                            setState(() {
-                              currentSubTasks.add(
-                                SubTask(
-                                  id: const Uuid().v4(),
-                                  title: val.trim(),
-                                ),
-                              );
-                              subTaskController.clear();
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Add a sub-task...',
-                          hintStyle: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                          filled: false,
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
 
                 // Time & Category
@@ -687,31 +580,24 @@ class TasksScreen extends HookConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         decoration: BoxDecoration(
                           color: theme.scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<TaskCategory>(
-                            value: category,
-                            isExpanded: true,
-                            dropdownColor: cs.surface,
-                            style: TextStyle(color: cs.onSurface, fontSize: 14),
-                            icon: Icon(
-                              Icons.expand_more,
-                              color: cs.onSurfaceVariant,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _categoryLabel(calculateCategory(selectedTime)),
+                              style: TextStyle(color: cs.onSurface, fontSize: 14),
                             ),
-                            items: TaskCategory.values
-                                .map(
-                                  (c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(_categoryLabel(c)),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (val) => setState(() => category = val!),
-                          ),
+                            Icon(
+                              Icons.lock_outline,
+                              color: cs.onSurfaceVariant,
+                              size: 16,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -813,74 +699,6 @@ class TasksScreen extends HookConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Timer Duration
-                Text(
-                  'Timer duration (optional)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: timerController,
-                        style: TextStyle(color: cs.onSurface, fontSize: 16),
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: 'e.g., 15 (minutes)',
-                          hintStyle: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                          filled: false,
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: cs.outline),
-                          ),
-                          focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: cs.primary, width: 2),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                          suffixText: 'min',
-                          suffixStyle: TextStyle(color: cs.onSurfaceVariant),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Tags
-                Text(
-                  'Tags (comma separated)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: tagsController,
-                  style: TextStyle(color: cs.onSurface, fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: 'Work, Health, SideHustle',
-                    hintStyle: TextStyle(
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                    ),
-                    filled: false,
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: cs.outline),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: cs.primary, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
                 const SizedBox(height: 28),
 
                 // Save button
@@ -893,17 +711,6 @@ class TasksScreen extends HookConsumerWidget {
                             '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}';
                       }
                       final sortedRepeatDays = repeatDays.toList()..sort();
-                      
-                      int? parsedTimer;
-                      if (timerController.text.isNotEmpty) {
-                        parsedTimer = int.tryParse(timerController.text);
-                      }
-                      
-                      final parsedTags = tagsController.text
-                          .split(',')
-                          .map((e) => e.trim())
-                          .where((e) => e.isNotEmpty)
-                          .toList();
 
                       if (isEditing) {
                         final updated = existingTask.copyWith(
@@ -912,13 +719,12 @@ class TasksScreen extends HookConsumerWidget {
                               ? descController.text
                               : null,
                           priority: priority,
-                          category: category,
+                          category: calculateCategory(selectedTime),
                           scheduledTime: timeStr,
                           repeatDays: sortedRepeatDays,
                           dueDate: sortedRepeatDays.isEmpty
                               ? selectedDate
                               : null,
-                          subTasks: currentSubTasks,
                         );
                         ref
                             .read(taskNotifierProvider.notifier)
@@ -931,15 +737,13 @@ class TasksScreen extends HookConsumerWidget {
                               ? descController.text
                               : null,
                           priority: priority,
-                          category: category,
+                          category: calculateCategory(selectedTime),
                           scheduledTime: timeStr,
                           repeatDays: sortedRepeatDays,
                           dueDate: sortedRepeatDays.isEmpty
                               ? selectedDate
                               : null,
-                          subTasks: currentSubTasks,
-                          timerDuration: parsedTimer,
-                          tags: parsedTags,
+                          createdDate: DateTime.now(),
                         );
                         ref.read(taskNotifierProvider.notifier).addTask(task);
                       }
@@ -1300,32 +1104,6 @@ class _RoutineCardState extends State<_RoutineCard>
                         ),
                       ),
                       
-                      // Tags
-                      if (task.tags.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          children: task.tags.map((tag) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '#$tag',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-
                       // Time badge
                       if (task.scheduledTime != null)
                         Container(
@@ -1356,55 +1134,6 @@ class _RoutineCardState extends State<_RoutineCard>
                             ],
                           ),
                         ),
-
-                      // Timer badge
-                      if (task.timerDuration != null) ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            if (_isRevealed) {
-                              _closeReveal();
-                              return;
-                            }
-                            showDialog(
-                              context: context,
-                              builder: (context) => TimerDialog(
-                                task: task,
-                                onComplete: () {
-                                  // Mark as done for today if timer finished
-                                  if (!isCompleted) {
-                                    widget.ref
-                                        .read(taskNotifierProvider.notifier)
-                                        .toggleTaskForDate(task, widget.selectedDate);
-                                  }
-                                },
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: cs.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.timer_outlined, size: 14, color: cs.onPrimaryContainer),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${task.timerDuration}m',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: cs.onPrimaryContainer,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),

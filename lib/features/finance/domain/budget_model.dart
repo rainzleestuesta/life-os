@@ -11,7 +11,7 @@ class Budget extends HiveObject {
   final String categoryName;
 
   @HiveField(2)
-  final double monthlyLimit;
+  final double? monthlyLimit;
 
   @HiveField(3)
   final DateTime startDate;
@@ -22,7 +22,7 @@ class Budget extends HiveObject {
   Budget({
     required this.id,
     required this.categoryName,
-    required this.monthlyLimit,
+    this.monthlyLimit,
     required this.startDate,
     this.endDate,
   });
@@ -45,6 +45,7 @@ class Budget extends HiveObject {
     String? id,
     String? categoryName,
     double? monthlyLimit,
+    bool clearMonthlyLimit = false,
     DateTime? startDate,
     DateTime? endDate,
     bool clearEndDate = false,
@@ -52,7 +53,7 @@ class Budget extends HiveObject {
     return Budget(
       id: id ?? this.id,
       categoryName: categoryName ?? this.categoryName,
-      monthlyLimit: monthlyLimit ?? this.monthlyLimit,
+      monthlyLimit: clearMonthlyLimit ? null : (monthlyLimit ?? this.monthlyLimit),
       startDate: startDate ?? this.startDate,
       endDate: clearEndDate ? null : (endDate ?? this.endDate),
     );
