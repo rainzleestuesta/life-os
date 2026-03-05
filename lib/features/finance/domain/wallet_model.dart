@@ -16,11 +16,15 @@ class Wallet extends HiveObject {
   @HiveField(3, defaultValue: 0.0)
   final double initialBalance;
 
+  @HiveField(4)
+  final int? color;
+
   Wallet({
     required this.id,
     required this.name,
     required this.iconKey,
     this.initialBalance = 0.0,
+    this.color,
   });
 
   Wallet copyWith({
@@ -28,12 +32,14 @@ class Wallet extends HiveObject {
     String? name,
     String? iconKey,
     double? initialBalance,
+    int? color,
   }) {
     return Wallet(
       id: id ?? this.id,
       name: name ?? this.name,
       iconKey: iconKey ?? this.iconKey,
       initialBalance: initialBalance ?? this.initialBalance,
+      color: color ?? this.color,
     );
   }
 }

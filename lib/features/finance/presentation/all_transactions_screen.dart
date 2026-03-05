@@ -193,6 +193,12 @@ class AllTransactionsScreen extends HookConsumerWidget {
                       itemCount: filteredTransactions.length,
                       itemBuilder: (context, index) {
                         final transaction = filteredTransactions[index];
+                        final srcWalletName = transaction.walletId != null ? walletMap[transaction.walletId] : null;
+                        final destWalletName = transaction.transferToWalletId != null ? walletMap[transaction.transferToWalletId] : null;
+                        final displayWalletName = transaction.isTransfer
+                            ? (srcWalletName != null && destWalletName != null ? '$srcWalletName → $destWalletName' : 'Transfer')
+                            : srcWalletName;
+                            
                         return Dismissible(
                           key: Key(transaction.id),
                           background: Container(
@@ -229,18 +235,24 @@ class AllTransactionsScreen extends HookConsumerWidget {
                                   width: 42,
                                   height: 42,
                                   decoration: BoxDecoration(
-                                    color: transaction.isExpense
-                                        ? Colors.red.withValues(alpha: 0.1)
-                                        : Colors.green.withValues(alpha: 0.1),
+                                    color: transaction.isTransfer
+                                        ? Colors.blue.withValues(alpha: 0.1)
+                                        : transaction.isExpense
+                                            ? Colors.red.withValues(alpha: 0.1)
+                                            : Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    transaction.isExpense
-                                        ? Icons.arrow_downward_rounded
-                                        : Icons.arrow_upward_rounded,
-                                    color: transaction.isExpense
-                                        ? Colors.red.shade400
-                                        : Colors.green.shade600,
+                                    transaction.isTransfer
+                                        ? Icons.swap_horiz_rounded
+                                        : transaction.isExpense
+                                            ? Icons.arrow_downward_rounded
+                                            : Icons.arrow_upward_rounded,
+                                    color: transaction.isTransfer
+                                        ? Colors.blue.shade600
+                                        : transaction.isExpense
+                                            ? Colors.red.shade400
+                                            : Colors.green.shade600,
                                     size: 20,
                                   ),
                                 ),
@@ -250,9 +262,11 @@ class AllTransactionsScreen extends HookConsumerWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        transaction.title?.isNotEmpty == true
-                                            ? transaction.title!
-                                            : transaction.category,
+                                        transaction.isTransfer
+                                            ? (transaction.title?.isNotEmpty == true ? transaction.title! : 'Transfer')
+                                            : transaction.title?.isNotEmpty == true
+                                                ? transaction.title!
+                                                : transaction.category,
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
@@ -297,20 +311,24 @@ class AllTransactionsScreen extends HookConsumerWidget {
                                               ),
                                             ),
                                           ],
-                                          if (transaction.walletId != null) ...[
+                                          if (displayWalletName != null) ...[
                                             const SizedBox(width: 6),
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: cs.tertiary.withValues(alpha: 0.1),
+                                                color: transaction.isTransfer 
+                                                    ? Colors.blue.withValues(alpha: 0.1)
+                                                    : cs.tertiary.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                walletMap[transaction.walletId] ?? 'Wallet',
+                                                displayWalletName,
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w600,
-                                                  color: cs.tertiary,
+                                                  color: transaction.isTransfer 
+                                                      ? Colors.blue.shade600
+                                                      : cs.tertiary,
                                                 ),
                                               ),
                                             ),
@@ -321,13 +339,15 @@ class AllTransactionsScreen extends HookConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${transaction.isExpense ? "-" : "+"}$currency${transaction.amount.toStringAsFixed(2)}',
+                                  '${transaction.isTransfer ? "" : (transaction.isExpense ? "-" : "+")}$currency${transaction.amount.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: transaction.isExpense
-                                        ? Colors.red.shade400
-                                        : Colors.green.shade600,
+                                    color: transaction.isTransfer
+                                        ? cs.onSurface
+                                        : transaction.isExpense
+                                            ? Colors.red.shade400
+                                            : Colors.green.shade600,
                                   ),
                                 ),
                               ],

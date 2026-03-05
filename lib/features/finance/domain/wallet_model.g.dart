@@ -21,13 +21,14 @@ class WalletAdapter extends TypeAdapter<Wallet> {
       name: fields[1] as String,
       iconKey: fields[2] as String,
       initialBalance: fields[3] == null ? 0.0 : fields[3] as double,
+      color: fields[4] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Wallet obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class WalletAdapter extends TypeAdapter<Wallet> {
       ..writeByte(2)
       ..write(obj.iconKey)
       ..writeByte(3)
-      ..write(obj.initialBalance);
+      ..write(obj.initialBalance)
+      ..writeByte(4)
+      ..write(obj.color);
   }
 
   @override

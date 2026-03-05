@@ -4,17 +4,18 @@ A comprehensive, offline-first personal management application built with Flutte
 
 ## 🌟 Features
 
-*   **📊 Insightful Dashboard:** Keep track of your daily routine completion progress, your top habit streaks, and a quick summary of your financial balance.
+*   **📊 Insightful Dashboard:** Monitor your daily routine progress, habit streaks, financial balance, and access **Universal Export/Import** tools with a quick theme toggle.
 *   **✅ Routine & Task Manager:** 
-    *   Create routines with custom times, repeat days, sub-tasks, and priorities.
-    *   **Optional Habit Timer:** Set a specific duration for routines and launch a countdown timer directly from the task card.
-    *   **Tags & Projects:** Categorize tasks with custom tags (e.g., `#Work`, `#Health`) for better organization.
+    *   Create routines with custom times, repeat days, and priorities.
     *   Track your progress and streaks.
     *   Filter your daily tasks effortlessly with a sleek date carousel.
 *   **💰 Finance Tracker:**
-    *   Log your income and expenses with customizable categories and **tags**.
-    *   Set monthly budget limits for different categories.
-    *   Visualize your spending limits and track your overall balance.
+    *   **Wallets Management:** Track balances across multiple sources (Bank, Cash, GCash, etc.).
+    *   Log your income and expenses with customizable categories.
+    *   **Budget Archives:** Set monthly budget limits and archive them once completed.
+    *   **Global Currency:** Consistent sync of currency symbols across all financial views.
+    *   **Editable Transactions:** Quick tap to modify past entries.
+*   **📂 Data Portability:** Universal CSV Export and Import for both Routines and Finances, allowing you to back up and restore your entire LifeFlow dataset.
 *   **📅 Calendar View:** A dedicated calendar screen providing a bird's eye view of your scheduled tasks, habits, and past financial transactions mapped directly to their dates.
 *   **🌙 Dark Mode & Theming:** A cohesive design system built on Material 3, supporting both bright light themes and deep dark modes.
 *   **🚀 Offline-First:** Powered by Hive, ensuring all your sensitive personal data stays locally on your device with lightning-fast read/write speeds.
@@ -27,7 +28,8 @@ A comprehensive, offline-first personal management application built with Flutte
 *   **Local Storage:** [Hive](https://docs.hivedb.dev/) (NoSQL Database)
 *   **Beautiful Charts:** [fl_chart](https://pub.dev/packages/fl_chart)
 *   **Calendar UI:** [table_calendar](https://pub.dev/packages/table_calendar)
-*   **Notifications:** `flutter_local_notifications`
+*   **Data Handling:** `csv` & `file_picker`
+*   **Sharing:** `share_plus`
 
 ## 📁 Project Structure (Feature-First)
 

@@ -26,13 +26,16 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       tags: (fields[6] as List).cast<String>(),
       walletId: fields[7] as String?,
       title: fields[8] as String?,
+      isTransfer: fields[9] == null ? false : fields[9] as bool,
+      transferToWalletId: fields[10] as String?,
+      transferFee: fields[11] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Transaction obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +53,13 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       ..writeByte(7)
       ..write(obj.walletId)
       ..writeByte(8)
-      ..write(obj.title);
+      ..write(obj.title)
+      ..writeByte(9)
+      ..write(obj.isTransfer)
+      ..writeByte(10)
+      ..write(obj.transferToWalletId)
+      ..writeByte(11)
+      ..write(obj.transferFee);
   }
 
   @override

@@ -45,24 +45,39 @@ final financeNotifierProvider =
 // Derived state for totals
 final totalBalanceProvider = Provider<double>((ref) {
   final transactions = ref.watch(financeNotifierProvider);
-  return transactions.fold(
-    0,
-    (sum, t) => t.isExpense ? sum - t.amount : sum + t.amount,
-  );
+  final wallets = ref.watch(walletNotifierProvider);
+  
+  final initialBalanceSum = wallets.fold(0.0, (sum, w) => sum + w.initialBalance);
+
+  final transactionsSum = transactions.fold(0.0, (sum, t) {
+    if (t.isTransfer) {
+      return sum - (t.transferFee ?? 0.0);
+    }
+    return t.isExpense ? sum - t.amount : sum + t.amount;
+  });
+
+  return initialBalanceSum + transactionsSum;
 });
 
 final totalIncomeProvider = Provider<double>((ref) {
   final transactions = ref.watch(financeNotifierProvider);
   return transactions
-      .where((t) => !t.isExpense)
-      .fold(0, (sum, t) => sum + t.amount);
+      .where((t) => !t.isExpense && !t.isTransfer)
+      .fold(0.0, (sum, t) => sum + t.amount);
 });
 
 final totalExpenseProvider = Provider<double>((ref) {
   final transactions = ref.watch(financeNotifierProvider);
-  return transactions
-      .where((t) => t.isExpense)
-      .fold(0, (sum, t) => sum + t.amount);
+  
+  final standardExpenses = transactions
+      .where((t) => t.isExpense && !t.isTransfer)
+      .fold(0.0, (sum, t) => sum + t.amount);
+      
+  final transferFees = transactions
+      .where((t) => t.isTransfer)
+      .fold(0.0, (sum, t) => sum + (t.transferFee ?? 0.0));
+
+  return standardExpenses + transferFees;
 });
 
 class BudgetNotifier extends Notifier<List<Budget>> {
@@ -170,6 +185,34 @@ final walletBalanceProvider = Provider.family<double, String>((ref, walletId) {
   } catch (_) {}
 
   return transactions
-      .where((t) => t.walletId == walletId)
-      .fold(initialBalance, (sum, t) => t.isExpense ? sum - t.amount : sum + t.amount);
+      .where((t) => t.walletId == walletId || t.transferToWalletId == walletId)
+      .fold(initialBalance, (sum, t) {
+        if (t.isTransfer) {
+          if (t.walletId == walletId) {
+            // Outbound transfer: subtract amount and any fee
+            return sum - t.amount - (t.transferFee ?? 0.0);
+          } else if (t.transferToWalletId == walletId) {
+            // Inbound transfer: add amount
+            return sum + t.amount;
+          }
+        }
+        if (t.walletId == walletId) {
+          return t.isExpense ? sum - t.amount : sum + t.amount;
+        }
+        return sum;
+      });
+});
+
+final walletIncomeProvider = Provider.family<double, String>((ref, walletId) {
+  final transactions = ref.watch(financeNotifierProvider);
+  return transactions
+      .where((t) => !t.isExpense && !t.isTransfer && t.walletId == walletId)
+      .fold(0.0, (sum, t) => sum + t.amount);
+});
+
+final walletExpenseProvider = Provider.family<double, String>((ref, walletId) {
+  final transactions = ref.watch(financeNotifierProvider);
+  return transactions
+      .where((t) => t.isExpense && !t.isTransfer && t.walletId == walletId)
+      .fold(0.0, (sum, t) => sum + t.amount);
 });

@@ -31,6 +31,15 @@ class Transaction extends HiveObject {
   @HiveField(8)
   final String? title;
 
+  @HiveField(9, defaultValue: false)
+  final bool isTransfer;
+
+  @HiveField(10)
+  final String? transferToWalletId;
+
+  @HiveField(11)
+  final double? transferFee;
+
   Transaction({
     required this.id,
     required this.amount,
@@ -41,6 +50,9 @@ class Transaction extends HiveObject {
     this.tags = const [],
     this.walletId,
     this.title,
+    this.isTransfer = false,
+    this.transferToWalletId,
+    this.transferFee,
   });
 
   Transaction copyWith({
@@ -53,6 +65,9 @@ class Transaction extends HiveObject {
     List<String>? tags,
     String? walletId,
     String? title,
+    bool? isTransfer,
+    String? transferToWalletId,
+    double? transferFee,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -64,6 +79,9 @@ class Transaction extends HiveObject {
       tags: tags ?? this.tags,
       walletId: walletId ?? this.walletId,
       title: title ?? this.title,
+      isTransfer: isTransfer ?? this.isTransfer,
+      transferToWalletId: transferToWalletId ?? this.transferToWalletId,
+      transferFee: transferFee ?? this.transferFee,
     );
   }
 }

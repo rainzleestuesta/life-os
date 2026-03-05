@@ -25,6 +25,7 @@ class FinanceScreen extends HookConsumerWidget {
     final currency = ref.watch(currencyProvider);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final pageController = usePageController(viewportFraction: 0.9);
 
     // Listen for "+" nav button trigger
     useEffect(() {
@@ -109,81 +110,119 @@ class FinanceScreen extends HookConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              // ── Total Balance Card ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 32,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [cs.primary, cs.primary.withValues(alpha: 0.8)],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: cs.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Balance',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+              // ── Swipeable Balance Cards ──
+              SizedBox(
+                height: 220,
+                child: PageView.builder(
+                  controller: pageController,
+                  itemCount: wallets.length + 1,
+                  itemBuilder: (context, index) {
+                    final isTotal = index == 0;
+                    final wallet = isTotal ? null : wallets[index - 1];
+
+                    final cardTitle = isTotal ? 'Total Balance' : wallet!.name;
+                    final cardBalance = isTotal 
+                        ? totalBalance 
+                        : ref.watch(walletBalanceProvider(wallet!.id));
+                    final cardIncome = isTotal
+                        ? income
+                        : ref.watch(walletIncomeProvider(wallet!.id));
+                    final cardExpense = isTotal
+                        ? expense
+                        : ref.watch(walletExpenseProvider(wallet!.id));
+                        
+                    final cardColor = isTotal 
+                        ? cs.primary 
+                        : (wallet!.color != null ? Color(wallet.color!) : cs.secondary);
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 24,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [cardColor, cardColor.withValues(alpha: 0.8)],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: cardColor.withValues(alpha: 0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              cardTitle,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '$currency${cardBalance.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            const Spacer(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _BalanceStat(
+                                  label: 'Income',
+                                  amount: cardIncome,
+                                  icon: Icons.arrow_upward_rounded,
+                                  color: const Color(0xFF81C784),
+                                  currency: currency,
+                                ),
+                                Container(
+                                  height: 32,
+                                  width: 1,
+                                  color: Colors.white24,
+                                ),
+                                _BalanceStat(
+                                  label: 'Expenses',
+                                  amount: cardExpense,
+                                  icon: Icons.arrow_downward_rounded,
+                                  color: const Color(0xFFEF9A9A),
+                                  currency: currency,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '$currency${totalBalance.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _BalanceStat(
-                            label: 'Income',
-                            amount: income,
-                            icon: Icons.arrow_upward_rounded,
-                            color: const Color(0xFF81C784),
-                            currency: currency,
-                          ),
-                          Container(
-                            height: 32,
-                            width: 1,
-                            color: Colors.white24,
-                          ),
-                          _BalanceStat(
-                            label: 'Expenses',
-                            amount: expense,
-                            icon: Icons.arrow_downward_rounded,
-                            color: const Color(0xFFEF9A9A),
-                            currency: currency,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              
+              // ── Carousel Indicator ──
+              Center(
+                child: _CarouselIndicator(
+                  pageController: pageController,
+                  itemCount: wallets.length + 1,
+                  activeColor: cs.primary,
+                  inactiveColor: cs.surfaceTint.withValues(alpha: 0.2),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // ── Wallets Section ──
               _WalletSection(),
@@ -275,9 +314,16 @@ class FinanceScreen extends HookConsumerWidget {
                       (index) {
                         final transaction =
                             transactions[transactions.length - 1 - index];
-                        final walletName = transaction.walletId != null
+                        final srcWalletName = transaction.walletId != null
                             ? wallets.where((w) => w.id == transaction.walletId).firstOrNull?.name
                             : null;
+                        final destWalletName = transaction.transferToWalletId != null
+                            ? wallets.where((w) => w.id == transaction.transferToWalletId).firstOrNull?.name
+                            : null;
+                        
+                        final displayWalletName = transaction.isTransfer
+                            ? (srcWalletName != null && destWalletName != null ? '$srcWalletName → $destWalletName' : 'Transfer')
+                            : srcWalletName;
                         return Dismissible(
                           key: Key(transaction.id),
                           background: Container(
@@ -321,18 +367,24 @@ class FinanceScreen extends HookConsumerWidget {
                                   width: 42,
                                   height: 42,
                                   decoration: BoxDecoration(
-                                    color: transaction.isExpense
-                                        ? Colors.red.withValues(alpha: 0.1)
-                                        : Colors.green.withValues(alpha: 0.1),
+                                    color: transaction.isTransfer
+                                        ? Colors.blue.withValues(alpha: 0.1)
+                                        : transaction.isExpense
+                                            ? Colors.red.withValues(alpha: 0.1)
+                                            : Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    transaction.isExpense
-                                        ? Icons.arrow_downward_rounded
-                                        : Icons.arrow_upward_rounded,
-                                    color: transaction.isExpense
-                                        ? Colors.red.shade400
-                                        : Colors.green.shade600,
+                                    transaction.isTransfer
+                                        ? Icons.swap_horiz_rounded
+                                        : transaction.isExpense
+                                            ? Icons.arrow_downward_rounded
+                                            : Icons.arrow_upward_rounded,
+                                    color: transaction.isTransfer
+                                        ? Colors.blue.shade600
+                                        : transaction.isExpense
+                                            ? Colors.red.shade400
+                                            : Colors.green.shade600,
                                     size: 20,
                                   ),
                                 ),
@@ -343,9 +395,11 @@ class FinanceScreen extends HookConsumerWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        transaction.title?.isNotEmpty == true
-                                            ? transaction.title!
-                                            : transaction.category,
+                                        transaction.isTransfer
+                                            ? (transaction.title?.isNotEmpty == true ? transaction.title! : 'Transfer')
+                                            : transaction.title?.isNotEmpty == true
+                                                ? transaction.title!
+                                                : transaction.category,
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
@@ -392,20 +446,24 @@ class FinanceScreen extends HookConsumerWidget {
                                               ),
                                             ),
                                           ],
-                                          if (walletName != null) ...[
+                                          if (displayWalletName != null) ...[
                                             const SizedBox(width: 6),
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: cs.tertiary.withValues(alpha: 0.1),
+                                                color: transaction.isTransfer 
+                                                    ? Colors.blue.withValues(alpha: 0.1)
+                                                    : cs.tertiary.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                walletName,
+                                                displayWalletName,
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w600,
-                                                  color: cs.tertiary,
+                                                  color: transaction.isTransfer 
+                                                      ? Colors.blue.shade600
+                                                      : cs.tertiary,
                                                 ),
                                               ),
                                             ),
@@ -416,13 +474,15 @@ class FinanceScreen extends HookConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${transaction.isExpense ? "-" : "+"}$currency${transaction.amount.toStringAsFixed(2)}',
+                                  '${transaction.isTransfer ? "" : (transaction.isExpense ? "-" : "+")}$currency${transaction.amount.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: transaction.isExpense
-                                        ? Colors.red.shade400
-                                        : Colors.green.shade600,
+                                    color: transaction.isTransfer
+                                        ? cs.onSurface
+                                        : transaction.isExpense
+                                            ? Colors.red.shade400
+                                            : Colors.green.shade600,
                                   ),
                                 ),
                               ],
@@ -470,10 +530,14 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
     final amountController = TextEditingController(text: isEditing ? existingTransaction.amount.toString() : '');
     final nameController = TextEditingController(text: isEditing ? (existingTransaction.title ?? '') : '');
     final categoryController = TextEditingController(text: isEditing ? existingTransaction.category : '');
+    final transferFeeController = TextEditingController(text: isEditing && existingTransaction.transferFee != null ? existingTransaction.transferFee.toString() : '');
+
     bool isExpense = isEditing ? existingTransaction.isExpense : true;
+    bool isTransfer = isEditing ? existingTransaction.isTransfer : false;
     String? selectedBudgetCategory = isEditing ? existingTransaction.budgetCategory : null;
     DateTime selectedDate = isEditing ? existingTransaction.date : DateTime.now();
     String? selectedWalletId = isEditing ? existingTransaction.walletId : null;
+    String? selectedTransferToWalletId = isEditing ? existingTransaction.transferToWalletId : null;
 
     // Get budget categories from provider
     final budgets = ref.read(budgetNotifierProvider);
@@ -536,17 +600,17 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => isExpense = true),
+                      onTap: () => setState(() { isExpense = true; isTransfer = false; }),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isExpense
+                          color: isExpense && !isTransfer
                               ? Colors.red.withValues(alpha: 0.12)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isExpense ? Colors.red.shade300 : cs.outline,
+                            color: isExpense && !isTransfer ? Colors.red.shade300 : cs.outline,
                           ),
                         ),
                         child: Center(
@@ -554,7 +618,7 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
                             'Expense',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: isExpense
+                              color: isExpense && !isTransfer
                                   ? Colors.red.shade400
                                   : cs.onSurfaceVariant,
                             ),
@@ -563,20 +627,20 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => isExpense = false),
+                      onTap: () => setState(() { isExpense = false; isTransfer = false; }),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: !isExpense
+                          color: !isExpense && !isTransfer
                               ? Colors.green.withValues(alpha: 0.12)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: !isExpense
+                            color: !isExpense && !isTransfer
                                 ? Colors.green.shade400
                                 : cs.outline,
                           ),
@@ -586,8 +650,40 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
                             'Income',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: !isExpense
+                              color: !isExpense && !isTransfer
                                   ? Colors.green.shade600
+                                  : cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() { isTransfer = true; }),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isTransfer
+                              ? cs.primary.withValues(alpha: 0.12)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isTransfer
+                                ? cs.primary
+                                : cs.outline,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Transfer',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isTransfer
+                                  ? cs.primary
                                   : cs.onSurfaceVariant,
                             ),
                           ),
@@ -622,24 +718,26 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
               const SizedBox(height: 16),
 
               // Name / Title
-              TextField(
-                controller: nameController,
-                style: TextStyle(color: cs.onSurface, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'Transaction Name (e.g. Burger)',
-                  labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: cs.outline),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: cs.primary, width: 2),
+              if (!isTransfer) ...[
+                TextField(
+                  controller: nameController,
+                  style: TextStyle(color: cs.onSurface, fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Transaction Name',
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.primary, width: 2),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
               // Category
-              if (isExpense) ...[
+              if (isExpense && !isTransfer) ...[
                 TextField(
                   controller: categoryController,
                   style: TextStyle(color: cs.onSurface, fontSize: 16),
@@ -658,7 +756,7 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
               ],
 
               // Budget Category (optional)
-              if (isExpense && budgetCategories.isNotEmpty) ...[
+              if (isExpense && !isTransfer && budgetCategories.isNotEmpty) ...[
                 DropdownButtonFormField<String>(
                   initialValue: selectedBudgetCategory,
                   decoration: InputDecoration(
@@ -738,7 +836,7 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
               const SizedBox(height: 16),
 
               // Wallet selector (optional)
-              if (wallets.isNotEmpty) ...[
+              if (wallets.isNotEmpty && !isTransfer) ...[
                 DropdownButtonFormField<String>(
                   value: selectedWalletId,
                   decoration: InputDecoration(
@@ -769,6 +867,73 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
                 const SizedBox(height: 12),
               ],
 
+              if (wallets.isNotEmpty && isTransfer) ...[
+                DropdownButtonFormField<String>(
+                  value: selectedWalletId,
+                  decoration: InputDecoration(
+                    labelText: 'Source Wallet',
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.primary, width: 2),
+                    ),
+                  ),
+                  dropdownColor: cs.surface,
+                  items: wallets.map(
+                    (w) => DropdownMenuItem<String>(
+                      value: w.id,
+                      child: Text(w.name, style: TextStyle(color: cs.onSurface)),
+                    ),
+                  ).toList(),
+                  onChanged: (val) => setState(() => selectedWalletId = val),
+                ),
+                const SizedBox(height: 12),
+                
+                DropdownButtonFormField<String>(
+                  value: selectedTransferToWalletId,
+                  decoration: InputDecoration(
+                    labelText: 'Destination Wallet',
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.primary, width: 2),
+                    ),
+                  ),
+                  dropdownColor: cs.surface,
+                  items: wallets.map(
+                    (w) => DropdownMenuItem<String>(
+                      value: w.id,
+                      child: Text(w.name, style: TextStyle(color: cs.onSurface)),
+                    ),
+                  ).toList(),
+                  onChanged: (val) => setState(() => selectedTransferToWalletId = val),
+                ),
+                const SizedBox(height: 12),
+
+                // Transfer Fee
+                TextField(
+                  controller: transferFeeController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(color: cs.onSurface, fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Transfer Fee (optional)',
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                    prefixText: '\$ ',
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: cs.primary, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               const SizedBox(height: 24),
 
               // Save button
@@ -776,18 +941,35 @@ void showTransactionSheet(BuildContext context, WidgetRef ref, {Transaction? exi
                 onPressed: () {
                   final amount = double.tryParse(amountController.text);
                   if (amount != null) {
-                    final category = isExpense
+                    if (isTransfer) {
+                        if (selectedWalletId == null || selectedTransferToWalletId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select both a source and destination wallet')));
+                            return;
+                        }
+                        if (selectedWalletId == selectedTransferToWalletId) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Source and destination wallets must be different')));
+                            return;
+                        }
+                    }
+
+                    final category = isTransfer ? 'Transfer' : (isExpense
                         ? (categoryController.text.isNotEmpty
                             ? categoryController.text
                             : 'General')
-                        : 'Income';
+                        : 'Income');
+                        
+                    final fee = double.tryParse(transferFeeController.text);
+                    
                     final transaction = Transaction(
                       id: isEditing ? existingTransaction!.id : const Uuid().v4(),
                       amount: amount,
                       title: nameController.text.trim().isNotEmpty ? nameController.text.trim() : null,
                       category: category,
-                      budgetCategory: selectedBudgetCategory,
-                      isExpense: isExpense,
+                      budgetCategory: isTransfer ? null : selectedBudgetCategory,
+                      isExpense: isTransfer ? false : isExpense,
+                      isTransfer: isTransfer,
+                      transferToWalletId: isTransfer ? selectedTransferToWalletId : null,
+                      transferFee: isTransfer ? fee : null,
                       date: selectedDate,
                       walletId: selectedWalletId,
                     );
@@ -1736,6 +1918,280 @@ class _BudgetSection extends ConsumerWidget {
 
 // ─── Wallet Section ────────────────────────────────────────────────────
 
+void _showWalletSheet(BuildContext context, WidgetRef ref, {Wallet? wallet}) {
+  final isEditing = wallet != null;
+  final nameController = TextEditingController(text: wallet?.name ?? '');
+  final initialBalanceController = TextEditingController(
+    text: wallet != null ? wallet.initialBalance.toStringAsFixed(2) : '',
+  );
+  final theme = Theme.of(context);
+  final cs = theme.colorScheme;
+  
+  // Predefined vibrant colors
+  final List<Color> availableColors = [
+    const Color(0xFF673AB7), // Deep Purple
+    const Color(0xFF2196F3), // Blue
+    const Color(0xFF009688), // Teal
+    const Color(0xFF4CAF50), // Green
+    const Color(0xFFFF9800), // Orange
+    const Color(0xFFE91E63), // Pink
+    const Color(0xFFF44336), // Red
+    const Color(0xFF9C27B0), // Purple
+    const Color(0xFF3F51B5), // Indigo
+    const Color(0xFF00BCD4), // Cyan
+  ];
+  
+  Color selectedColor = wallet?.color != null 
+      ? Color(wallet!.color!) 
+      : availableColors[0];
+  
+  String selectedIconKey = wallet?.iconKey ?? 'cash';
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 32,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isEditing ? 'Edit Wallet' : 'Add Wallet',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          if (isEditing)
+                            IconButton(
+                              icon: Icon(Icons.delete_outline, color: cs.error),
+                              onPressed: () {
+                                ref.read(walletNotifierProvider.notifier).deleteWallet(wallet);
+                                Navigator.pop(context);
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      TextField(
+                        controller: nameController,
+                        style: TextStyle(color: cs.onSurface, fontSize: 16),
+                        decoration: InputDecoration(
+                          labelText: 'Wallet Name',
+                          labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: cs.outline),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: cs.primary, width: 2),
+                          ),
+                        ),
+                        autofocus: !isEditing,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: initialBalanceController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        style: TextStyle(color: cs.onSurface, fontSize: 16),
+                        decoration: InputDecoration(
+                          labelText: 'Initial Balance',
+                          labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                          prefixText: '\$ ',
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: cs.outline),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: cs.primary, width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Card Icon',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 50,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: kWalletIcons.length,
+                          itemBuilder: (context, index) {
+                            final key = kWalletIcons.keys.elementAt(index);
+                            final icon = kWalletIcons[key]!;
+                            final isSelected = selectedIconKey == key;
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  selectedIconKey = key;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? cs.primaryContainer : cs.surfaceContainerHighest,
+                                  shape: BoxShape.circle,
+                                  border: isSelected
+                                      ? Border.all(color: cs.primary, width: 2)
+                                      : null,
+                                ),
+                                child: Icon(
+                                  icon,
+                                  color: isSelected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                                  size: 24,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Card Color',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 50,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: availableColors.length,
+                          itemBuilder: (context, index) {
+                            final color = availableColors[index];
+                            final isSelected = selectedColor.value == color.value;
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  selectedColor = color;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  border: isSelected
+                                      ? Border.all(color: cs.onSurface, width: 3)
+                                      : null,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: color.withValues(alpha: 0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: isSelected
+                                    ? const Icon(Icons.check, color: Colors.white, size: 24)
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () {
+                            final name = nameController.text.trim();
+                            if (name.isNotEmpty) {
+                              final initialBal = double.tryParse(initialBalanceController.text) ?? 0.0;
+                              
+                              final newWallet = Wallet(
+                                id: isEditing ? wallet.id : const Uuid().v4(),
+                                name: name,
+                                iconKey: selectedIconKey,
+                                initialBalance: initialBal,
+                                color: selectedColor.value,
+                              );
+
+                              if (isEditing) {
+                                ref.read(walletNotifierProvider.notifier).updateWallet(wallet, newWallet);
+                              } else {
+                                ref.read(walletNotifierProvider.notifier).addWallet(newWallet);
+                              }
+                              Navigator.pop(context);
+                            }
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: cs.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            isEditing ? 'Save Changes' : 'Add Wallet',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+// ─── Wallet Section ────────────────────────────────────────────────────
+
 const Map<String, IconData> kWalletIcons = {
   'cash': Icons.payments_outlined,
   'bank': Icons.account_balance_outlined,
@@ -1792,35 +2248,46 @@ class _WalletSection extends ConsumerWidget {
                   child: const Icon(Icons.delete_outline, color: Colors.white),
                 ),
                 onDismissed: (_) => ref.read(walletNotifierProvider.notifier).deleteWallet(wallet),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42, height: 42,
-                        decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(12)),
-                        child: Icon(icon, color: cs.onPrimaryContainer, size: 22),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(wallet.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface))),
-                      Text(
-                        '$currency${balance.toStringAsFixed(2)}',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: balance >= 0 ? Colors.green.shade600 : Colors.red.shade400),
-                      ),
-                    ],
+                child: InkWell(
+                  onTap: () {
+                     _showWalletSheet(context, ref, wallet: wallet);
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42, height: 42,
+                          decoration: BoxDecoration(
+                            color: wallet.color != null ? Color(wallet.color!) : cs.primaryContainer, 
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: wallet.color != null ? Colors.white : cs.onPrimaryContainer, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(wallet.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface))),
+                        Text(
+                          '$currency${balance.toStringAsFixed(2)}',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: balance >= 0 ? Colors.green.shade600 : Colors.red.shade400),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             }),
           const SizedBox(height: 8),
           InkWell(
-            onTap: () => _showAddWalletSheet(context, ref),
+            onTap: () {
+               _showWalletSheet(context, ref);
+            },
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1842,113 +2309,6 @@ class _WalletSection extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  void _showAddWalletSheet(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final nameController = TextEditingController();
-    final balanceController = TextEditingController();
-    String selectedIcon = 'cash';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16, left: 24, right: 24, top: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: cs.outline, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 20),
-              Text('New Wallet', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: cs.onSurface)),
-              const SizedBox(height: 20),
-              TextField(
-                controller: nameController,
-                style: TextStyle(color: cs.onSurface, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'Wallet Name',
-                  labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                  hintText: 'e.g., GCash, Bank Account, Cash',
-                  hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cs.outline)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: cs.primary, width: 2)),
-                ),
-                autofocus: true,
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: balanceController,
-                style: TextStyle(color: cs.onSurface, fontSize: 16),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Initial Balance (optional)',
-                  labelStyle: TextStyle(color: cs.onSurfaceVariant),
-                  prefixText: '\$ ',
-                  prefixStyle: TextStyle(color: cs.onSurfaceVariant),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cs.outline)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: cs.primary, width: 2)),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text('Icon', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: kWalletIcons.entries.map((entry) {
-                  final isSelected = entry.key == selectedIcon;
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedIcon = entry.key),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(
-                        color: isSelected ? cs.primary.withValues(alpha: 0.12) : cs.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(14),
-                        border: isSelected ? Border.all(color: cs.primary, width: 2) : null,
-                      ),
-                      child: Icon(entry.value, color: isSelected ? cs.primary : cs.onSurfaceVariant, size: 24),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  if (nameController.text.trim().isNotEmpty) {
-                    double initialBalance = 0.0;
-                    if (balanceController.text.trim().isNotEmpty) {
-                      initialBalance = double.tryParse(balanceController.text.trim()) ?? 0.0;
-                    }
-                    ref.read(walletNotifierProvider.notifier).addWallet(
-                      Wallet(
-                        id: const Uuid().v4(),
-                        name: nameController.text.trim(),
-                        iconKey: selectedIcon,
-                        initialBalance: initialBalance,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: cs.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                ),
-                child: const Text('Add Wallet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -2040,6 +2400,55 @@ class _CategorySpendingSection extends ConsumerWidget {
           }),
         ],
       ),
+    );
+  }
+}
+
+class _CarouselIndicator extends StatelessWidget {
+  final PageController pageController;
+  final int itemCount;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  const _CarouselIndicator({
+    super.key,
+    required this.pageController,
+    required this.itemCount,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (itemCount <= 1) return const SizedBox.shrink();
+
+    return AnimatedBuilder(
+      animation: pageController,
+      builder: (context, child) {
+        final currentPage = pageController.positions.isNotEmpty
+            ? (pageController.page ?? pageController.initialPage).round()
+            : 0;
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(
+            itemCount,
+            (index) {
+              final isActive = index == currentPage;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 8,
+                width: isActive ? 24 : 8,
+                decoration: BoxDecoration(
+                  color: isActive ? activeColor : inactiveColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -77,10 +79,27 @@ class ExportService {
     }).toList();
 
     final taskCsvData = const ListToCsvConverter().convert([taskHeaders, ...taskRows]);
+    final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+
+    if (kIsWeb) {
+      final transactionsXFile = XFile.fromData(
+        utf8.encode(csvData),
+        mimeType: 'text/csv',
+        name: 'lifeflow_transactions_$timestamp.csv',
+      );
+      final tasksXFile = XFile.fromData(
+        utf8.encode(taskCsvData),
+        mimeType: 'text/csv',
+        name: 'lifeflow_routines_$timestamp.csv',
+      );
+      await Share.shareXFiles(
+        [transactionsXFile, tasksXFile],
+        subject: 'LifeFlow Data Export',
+      );
+      return;
+    }
 
     final dir = await getTemporaryDirectory();
-    final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    
     final file = File('${dir.path}/lifeflow_transactions_$timestamp.csv');
     await file.writeAsString(csvData);
 

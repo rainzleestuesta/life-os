@@ -36,8 +36,8 @@ class NotificationService {
     if (kIsWeb) return;
     if (task.scheduledTime == null) return;
 
-    // Use task ID hash as notification ID
-    final int notificationId = task.id.hashCode;
+    // Use consistent task ID hash as notification ID
+    final int notificationId = _fastHash(task.id);
 
     final now = DateTime.now();
     final parts = task.scheduledTime!.split(':');
@@ -73,8 +73,19 @@ class NotificationService {
   }
 
   Future<void> cancelRoutineNotification(String taskId) async {
-    if (kIsWeb) return;
-    await flutterLocalNotificationsPlugin.cancel(id: taskId.hashCode);
+    await flutterLocalNotificationsPlugin.cancel(id: _fastHash(taskId));
+  }
+
+  /// Creates a consistent 32-bit integer hash from a string.
+  /// Safe for both native and Web (JS 53-bit integers).
+  int _fastHash(String string) {
+    int hash = 0x811c9dc5; // 32-bit FNV offset basis
+    for (int i = 0; i < string.length; i++) {
+      hash ^= string.codeUnitAt(i);
+      hash *= 0x01000193; // 32-bit FNV prime
+      hash &= 0xFFFFFFFF; // mask to 32 bits
+    }
+    return hash & 0x7FFFFFFF; // Ensure positive 32-bit int
   }
 }
 
